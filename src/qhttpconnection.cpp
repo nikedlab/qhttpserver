@@ -53,6 +53,8 @@ QHttpConnection::QHttpConnection(QObject *parent)
 
     m_parser->data = this;
 
+    qDebug() << "QHttpConnection";
+
     m_socket = new QTcpSocket();
 
     connect(m_socket, SIGNAL(readyRead()), this, SLOT(parseRequest()));
