@@ -35,7 +35,7 @@ class QHTTPSERVER_API QHttpConnection : public QObject
     Q_OBJECT
 
 public:
-    QHttpConnection(QTcpSocket *socket, QObject *parent = 0);
+    QHttpConnection(QObject *parent = 0);
     virtual ~QHttpConnection();
 
     void write(const QByteArray &data);

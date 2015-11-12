@@ -11,10 +11,9 @@
 HelloWorld::HelloWorld()
 {
     QHttpServer *server = new QHttpServer(this);
-    connect(server, SIGNAL(newRequest(QHttpRequest*, QHttpResponse*)),
-            this, SLOT(handleRequest(QHttpRequest*, QHttpResponse*)));
+    connect(server, SIGNAL(newRequest(QHttpRequest*, QHttpResponse*)), this, SLOT(handleRequest(QHttpRequest*, QHttpResponse*)));
 
-    server->listen(QHostAddress::Any, 8080);
+    server->listen(QHostAddress::Any, 1024);
 }
 
 void HelloWorld::handleRequest(QHttpRequest *req, QHttpResponse *resp)

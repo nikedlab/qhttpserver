@@ -96,13 +96,12 @@ QHttpServer::~QHttpServer()
 
 void QHttpServer::newConnection()
 {
+    qDebug() << "newConnection";
     Q_ASSERT(m_tcpServer);
 
     while (m_tcpServer->hasPendingConnections()) {
-        QHttpConnection *connection =
-            new QHttpConnection(m_tcpServer->nextPendingConnection(), this);
-        connect(connection, SIGNAL(newRequest(QHttpRequest *, QHttpResponse *)), this,
-                SIGNAL(newRequest(QHttpRequest *, QHttpResponse *)));
+        QHttpConnection *connection = new QHttpConnection(this);
+        connect(connection, SIGNAL(newRequest(QHttpRequest *, QHttpResponse *)), this, SIGNAL(newRequest(QHttpRequest *, QHttpResponse *)));
     }
 }
 
