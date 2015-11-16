@@ -92,7 +92,7 @@ Q_SIGNALS:
 
 private:
     QTcpServer *m_tcpServer;
-    QHttpConnection connection;
+    QHttpConnection *connection;
 
 protected:
     void incomingConnection(qintptr socketDescriptor) Q_DECL_OVERRIDE;

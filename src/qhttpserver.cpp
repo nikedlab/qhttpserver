@@ -87,7 +87,7 @@ QHttpServer::QHttpServer(QObject *parent) : QTcpServer(parent), m_tcpServer(0)
     STATUS_CODE(510, "Not Extended") // RFC 2774
     // }}}
 
-    connect(this, SIGNAL(prepareConnection(qintptr)), &connection, SLOT(prepareConnection(qintptr)));
+
 }
 
 QHttpServer::~QHttpServer()
@@ -107,6 +107,9 @@ bool QHttpServer::listen(const QHostAddress &address, quint16 port)
 }
 
 void QHttpServer::incomingConnection(qintptr socketDescriptor) {
+    connection = new QHttpConnection(this);
+    connect(this, SIGNAL(prepareConnection(qintptr)), connection, SLOT(prepareConnection(qintptr)));
+    connect(connection, SIGNAL(newRequest(QHttpRequest*,QHttpResponse*)), this, SIGNAL(newRequest(QHttpRequest*,QHttpResponse*)));
     emit prepareConnection(socketDescriptor);
 }
 

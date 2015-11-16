@@ -35,3 +35,6 @@ target.path = $$LIBDIR
 headers.path = $$INCLUDEDIR
 headers.files = $$PUBLIC_HEADERS
 INSTALLS += target headers
+
+RESOURCES += \
+    certs.qrc

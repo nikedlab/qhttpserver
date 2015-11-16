@@ -23,7 +23,10 @@
 #include "qhttpconnection.h"
 
 #include <QTcpSocket>
+#include <QSslSocket>
 #include <QHostAddress>
+#include <QFile>
+#include <QSslConfiguration>
 
 #include "http_parser.h"
 #include "qhttprequest.h"
@@ -53,16 +56,50 @@ QHttpConnection::QHttpConnection(QObject *parent)
 
     m_parser->data = this;
 
-    m_socket = new QTcpSocket();
+
+    QSslSocket *ssl = new QSslSocket(this);
+
+    QSslConfiguration sslConf;
+    sslConf.setProtocol(QSsl::TlsV1SslV3);
+    sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
+    sslConf.setLocalCertificate(loadCertificate());
+    sslConf.setPrivateKey(loadKey());
+
+    ssl->setSslConfiguration(sslConf);
+    m_socket = ssl;
 
     connect(m_socket, SIGNAL(readyRead()), this, SLOT(read()));
     connect(m_socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
     connect(m_socket, SIGNAL(bytesWritten(qint64)), this, SLOT(updateWriteCount(qint64)));
 }
 
+QSslCertificate QHttpConnection::loadCertificate() {
+    QString certContent = getFileContent(":/server.crt");
+    return QSslCertificate(certContent.toUtf8(), QSsl::Pem);
+}
+
+QSslKey QHttpConnection::loadKey() {
+    QString keyContent = getFileContent(":/server.key");
+    return QSslKey(keyContent.toUtf8(), QSsl::Rsa, QSsl::Pem);
+}
+
+QString QHttpConnection::getFileContent(QString path)
+{
+    QFile file(path);
+    if(!file.open(QFile::ReadOnly | QFile::Text)) {
+        qCritical() << "Can't load SSL file: " << path;
+    }
+
+    QTextStream in(&file);
+    QString text = in.readAll();
+    file.close();
+    return text;
+}
+
+
 void QHttpConnection::prepareConnection(qintptr descriptor) {
     qDebug() << "New connection: " << descriptor;
-    Q_ASSERT(m_socket->isOpen()==false); // if not, then the handler is already busy
+    //Q_ASSERT(m_socket->isOpen()==false); // if not, then the handler is already busy
 
     //UGLY workaround - we need to clear writebuffer before reusing this socket
     //https://bugreports.qt-project.org/browse/QTBUG-28914
@@ -73,6 +110,8 @@ void QHttpConnection::prepareConnection(qintptr descriptor) {
         qCritical("HttpConnectionHandler (%p): cannot initialize socket: %s", this,qPrintable(m_socket->errorString()));
         return;
     }
+
+    ((QSslSocket *) m_socket)->startServerEncryption();
 }
 
 QHttpConnection::~QHttpConnection()
@@ -138,16 +177,19 @@ void QHttpConnection::write(const QByteArray &data)
 
 void QHttpConnection::flush()
 {
+    qDebug() << "flush";
     m_socket->flush();
 }
 
 void QHttpConnection::waitForBytesWritten()
 {
+    qDebug() << "waitForBytesWritten";
     m_socket->waitForBytesWritten();
 }
 
 void QHttpConnection::responseDone()
 {
+    qDebug() << "responseDone";
     QHttpResponse *response = qobject_cast<QHttpResponse *>(QObject::sender());
     if (response->m_last)
         m_socket->disconnectFromHost();

@@ -27,6 +27,8 @@
 #include "qhttpserverfwd.h"
 
 #include <QObject>
+#include <QSslCertificate>
+#include <QSslKey>
 
 /// @cond nodoc
 
@@ -63,6 +65,9 @@ private:
     static int HeadersComplete(http_parser *parser);
     static int Body(http_parser *parser, const char *at, size_t length);
     static int MessageComplete(http_parser *parser);
+    QSslCertificate loadCertificate();
+    QSslKey loadKey();
+    QString getFileContent(QString path);
 
 private:
     QTcpSocket *m_socket;
