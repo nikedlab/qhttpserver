@@ -55,8 +55,8 @@ QHttpConnection::QHttpConnection(QObject *parent)
 
     m_socket = new QTcpSocket();
 
-    connect(m_socket, SIGNAL(readyRead()), this, SLOT(parseRequest()));
-    connect(m_socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+    connect(m_socket, SIGNAL(readyRead()), this, SLOT(read()));
+    connect(m_socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
     connect(m_socket, SIGNAL(bytesWritten(qint64)), this, SLOT(updateWriteCount(qint64)));
 }
 
@@ -87,9 +87,11 @@ QHttpConnection::~QHttpConnection()
     m_parserSettings = 0;
 }
 
-void QHttpConnection::socketDisconnected()
+void QHttpConnection::disconnected()
 {
+    qDebug() << "disconnected";
     deleteLater();
+    m_socket->close();
 
     if (m_request) {
         if (m_request->successful())
@@ -102,6 +104,7 @@ void QHttpConnection::socketDisconnected()
 
 void QHttpConnection::updateWriteCount(qint64 count)
 {
+    qDebug() << "updateWriteCount";
     Q_ASSERT(m_transmitPos + count <= m_transmitLen);
 
     m_transmitPos += count;
@@ -114,9 +117,9 @@ void QHttpConnection::updateWriteCount(qint64 count)
     }
 }
 
-void QHttpConnection::parseRequest()
+void QHttpConnection::read()
 {
-    qDebug() << "parseRequest";
+    qDebug() << "read";
     Q_ASSERT(m_parser);
 
     while (m_socket->bytesAvailable()) {
@@ -127,6 +130,7 @@ void QHttpConnection::parseRequest()
 
 void QHttpConnection::write(const QByteArray &data)
 {
+    qDebug() << "write: " << data;
     m_socket->write(data);
     m_transmitLen += data.size();
 }

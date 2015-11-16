@@ -50,9 +50,9 @@ public slots:
     void prepareConnection(qintptr descriptor);
 
 private Q_SLOTS:
-    void parseRequest();
+    void read();
     void responseDone();
-    void socketDisconnected();
+    void disconnected();
     void updateWriteCount(qint64);
 
 private:
