@@ -31,7 +31,7 @@
 
 QHash<int, QString> STATUS_CODES;
 
-QHttpServer::QHttpServer(QObject *parent) : QObject(parent), m_tcpServer(0)
+QHttpServer::QHttpServer(QObject *parent) : QTcpServer(parent), m_tcpServer(0)
 {
 #define STATUS_CODE(num, reason) STATUS_CODES.insert(num, reason);
     // {{{
@@ -88,45 +88,32 @@ QHttpServer::QHttpServer(QObject *parent) : QObject(parent), m_tcpServer(0)
     STATUS_CODE(509, "Bandwidth Limit Exceeded")
     STATUS_CODE(510, "Not Extended") // RFC 2774
     // }}}
+
+    connection = new QHttpConnection(this);
+    connect(this, SIGNAL(prepareConnection(qintptr)), connection, SLOT(prepareConnection(qintptr)));
 }
 
 QHttpServer::~QHttpServer()
 {
-}
 
-void QHttpServer::newConnection()
-{
-    qDebug() << "newConnection";
-    Q_ASSERT(m_tcpServer);
-
-    while (m_tcpServer->hasPendingConnections()) {
-        QHttpConnection *connection = new QHttpConnection(this);
-        connect(connection, SIGNAL(newRequest(QHttpRequest *, QHttpResponse *)), this, SIGNAL(newRequest(QHttpRequest *, QHttpResponse *)));
-    }
 }
 
 bool QHttpServer::listen(const QHostAddress &address, quint16 port)
 {
-    Q_ASSERT(!m_tcpServer);
-    m_tcpServer = new QTcpServer(this);
-
-    bool couldBindToPort = m_tcpServer->listen(address, port);
+    bool couldBindToPort = QTcpServer::listen(address, port);
     if (couldBindToPort) {
-        connect(m_tcpServer, SIGNAL(newConnection()), this, SLOT(newConnection()));
+        qDebug() << "Server started";
     } else {
-        delete m_tcpServer;
-        m_tcpServer = NULL;
+        qDebug() << "Server start error";
     }
     return couldBindToPort;
+}
+
+void QHttpServer::incomingConnection(qintptr socketDescriptor) {
+    emit prepareConnection(socketDescriptor);
 }
 
 bool QHttpServer::listen(quint16 port)
 {
     return listen(QHostAddress::Any, port);
-}
-
-void QHttpServer::close()
-{
-    if (m_tcpServer)
-        m_tcpServer->close();
 }

@@ -53,13 +53,26 @@ QHttpConnection::QHttpConnection(QObject *parent)
 
     m_parser->data = this;
 
-    qDebug() << "QHttpConnection";
-
     m_socket = new QTcpSocket();
 
     connect(m_socket, SIGNAL(readyRead()), this, SLOT(parseRequest()));
     connect(m_socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
     connect(m_socket, SIGNAL(bytesWritten(qint64)), this, SLOT(updateWriteCount(qint64)));
+}
+
+void QHttpConnection::prepareConnection(qintptr descriptor) {
+    qDebug() << "New connection: " << descriptor;
+    Q_ASSERT(m_socket->isOpen()==false); // if not, then the handler is already busy
+
+    //UGLY workaround - we need to clear writebuffer before reusing this socket
+    //https://bugreports.qt-project.org/browse/QTBUG-28914
+    m_socket->connectToHost("",0);
+    m_socket->abort();
+
+    if (!m_socket->setSocketDescriptor(descriptor)) {
+        qCritical("HttpConnectionHandler (%p): cannot initialize socket: %s", this,qPrintable(m_socket->errorString()));
+        return;
+    }
 }
 
 QHttpConnection::~QHttpConnection()
@@ -103,6 +116,7 @@ void QHttpConnection::updateWriteCount(qint64 count)
 
 void QHttpConnection::parseRequest()
 {
+    qDebug() << "parseRequest";
     Q_ASSERT(m_parser);
 
     while (m_socket->bytesAvailable()) {

@@ -32,6 +32,7 @@
 
 #include <QObject>
 #include <QHostAddress>
+#include <QTcpServer>
 
 /// Maps status codes to string reason phrases
 extern QHash<int, QString> STATUS_CODES;
@@ -53,14 +54,14 @@ extern QHash<int, QString> STATUS_CODES;
 
     helloworld.h
     @include helloworld/helloworld.h */
-class QHTTPSERVER_API QHttpServer : public QObject
+class QHTTPSERVER_API QHttpServer : public QTcpServer
 {
     Q_OBJECT
 
 public:
     /// Construct a new HTTP Server.
     /** @param parent Parent QObject for the server. */
-    QHttpServer(QObject *parent = 0);
+    explicit QHttpServer(QObject *parent = 0);
 
     virtual ~QHttpServer();
 
@@ -79,8 +80,6 @@ public:
         @sa listen(const QHostAddress&, quint16) */
     bool listen(quint16 port);
 
-    /// Stop the server and listening for new connections.
-    void close();
 Q_SIGNALS:
     /// Emitted when a client makes a new request to the server.
     /** The slot should use the given @c request and @c response
@@ -88,12 +87,14 @@ Q_SIGNALS:
         @param request New incoming request.
         @param response Response object to the request. */
     void newRequest(QHttpRequest *request, QHttpResponse *response);
-
-private Q_SLOTS:
-    void newConnection();
+    void prepareConnection(qintptr descriptor);
 
 private:
     QTcpServer *m_tcpServer;
+    QHttpConnection *connection;
+
+protected:
+    void incomingConnection(qintptr socketDescriptor) Q_DECL_OVERRIDE;
 };
 
 #endif

@@ -46,6 +46,9 @@ Q_SIGNALS:
     void newRequest(QHttpRequest *, QHttpResponse *);
     void allBytesWritten();
 
+public slots:
+    void prepareConnection(qintptr descriptor);
+
 private Q_SLOTS:
     void parseRequest();
     void responseDone();
