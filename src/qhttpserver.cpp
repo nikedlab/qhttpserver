@@ -27,8 +27,6 @@
 #include <QVariant>
 #include <QDebug>
 
-#include "qhttpconnection.h"
-
 QHash<int, QString> STATUS_CODES;
 
 QHttpServer::QHttpServer(QObject *parent) : QTcpServer(parent), m_tcpServer(0)
@@ -89,13 +87,12 @@ QHttpServer::QHttpServer(QObject *parent) : QTcpServer(parent), m_tcpServer(0)
     STATUS_CODE(510, "Not Extended") // RFC 2774
     // }}}
 
-    connection = new QHttpConnection(this);
-    connect(this, SIGNAL(prepareConnection(qintptr)), connection, SLOT(prepareConnection(qintptr)));
+    connect(this, SIGNAL(prepareConnection(qintptr)), &connection, SLOT(prepareConnection(qintptr)));
 }
 
 QHttpServer::~QHttpServer()
 {
-
+    qDebug() << "~QHttpServer";
 }
 
 bool QHttpServer::listen(const QHostAddress &address, quint16 port)

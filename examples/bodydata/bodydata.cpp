@@ -63,6 +63,7 @@ void Responder::accumulate(const QByteArray &data)
 
 void Responder::reply()
 {
+    qDebug() << "reply";
     m_resp->end(QByteArray("</p></body></html>"));
 }
 
