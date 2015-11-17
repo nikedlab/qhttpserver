@@ -29,12 +29,14 @@
 #include <QObject>
 #include <QSslCertificate>
 #include <QSslKey>
-
+#include <QSslConfiguration>
+#include <QSslSocket>
 /// @cond nodoc
 
 class QHTTPSERVER_API QHttpConnection : public QObject
 {
     Q_OBJECT
+
 
 public:
     QHttpConnection(QObject *parent = 0);
@@ -43,6 +45,8 @@ public:
     void write(const QByteArray &data);
     void flush();
     void waitForBytesWritten();
+    void setSslConf(const QSslConfiguration &m_sslConf);
+    void start();
 
 Q_SIGNALS:
     void newRequest(QHttpRequest *, QHttpResponse *);
@@ -57,6 +61,8 @@ private Q_SLOTS:
     void disconnected();
     void updateWriteCount(qint64);
 
+
+
 private:
     static int MessageBegin(http_parser *parser);
     static int Url(http_parser *parser, const char *at, size_t length);
@@ -65,14 +71,13 @@ private:
     static int HeadersComplete(http_parser *parser);
     static int Body(http_parser *parser, const char *at, size_t length);
     static int MessageComplete(http_parser *parser);
-    QSslCertificate loadCertificate();
-    QSslKey loadKey();
-    QString getFileContent(QString path);
+    QSslSocket *m_ssl;
 
 private:
     QTcpSocket *m_socket;
     http_parser *m_parser;
     http_parser_settings *m_parserSettings;
+    QSslConfiguration *m_sslConf = 0;
 
     // Since there can only be one request at any time even with pipelining.
     QHttpRequest *m_request;

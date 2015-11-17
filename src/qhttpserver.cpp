@@ -29,8 +29,18 @@
 
 QHash<int, QString> STATUS_CODES;
 
-QHttpServer::QHttpServer(QObject *parent) : QTcpServer(parent), m_tcpServer(0)
+QHttpServer::QHttpServer(QSslConfiguration sslConf, QObject *parent) : QTcpServer(parent) {
+    init();
+    this->m_sslConf = new QSslConfiguration(sslConf);
+}
+
+QHttpServer::QHttpServer(QObject *parent) : QTcpServer(parent)
 {
+    init();
+
+}
+
+void QHttpServer::init() {
 #define STATUS_CODE(num, reason) STATUS_CODES.insert(num, reason);
     // {{{
     STATUS_CODE(100, "Continue")
@@ -87,12 +97,12 @@ QHttpServer::QHttpServer(QObject *parent) : QTcpServer(parent), m_tcpServer(0)
     STATUS_CODE(510, "Not Extended") // RFC 2774
     // }}}
 
-
 }
 
 QHttpServer::~QHttpServer()
 {
     qDebug() << "~QHttpServer";
+    delete m_sslConf;
 }
 
 bool QHttpServer::listen(const QHostAddress &address, quint16 port)
@@ -108,6 +118,13 @@ bool QHttpServer::listen(const QHostAddress &address, quint16 port)
 
 void QHttpServer::incomingConnection(qintptr socketDescriptor) {
     connection = new QHttpConnection(this);
+    if (m_sslConf) {
+        connection->setSslConf(*m_sslConf);
+
+    }
+
+    connection->start();
+
     connect(this, SIGNAL(prepareConnection(qintptr)), connection, SLOT(prepareConnection(qintptr)));
     connect(connection, SIGNAL(newRequest(QHttpRequest*,QHttpResponse*)), this, SIGNAL(newRequest(QHttpRequest*,QHttpResponse*)));
     emit prepareConnection(socketDescriptor);

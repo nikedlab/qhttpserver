@@ -23,7 +23,7 @@
 #include "qhttpconnection.h"
 
 #include <QTcpSocket>
-#include <QSslSocket>
+
 #include <QHostAddress>
 #include <QFile>
 #include <QSslConfiguration>
@@ -55,47 +55,31 @@ QHttpConnection::QHttpConnection(QObject *parent)
     m_parserSettings->on_message_complete = MessageComplete;
 
     m_parser->data = this;
+}
 
+void QHttpConnection::start() {
+    if(m_sslConf) {
+        Q_ASSERT(m_sslConf);
+        m_sslConf->setProtocol(QSsl::TlsV1SslV3);
+        m_sslConf->setPeerVerifyMode(QSslSocket::VerifyNone);
 
-    QSslSocket *ssl = new QSslSocket(this);
+        m_ssl = new QSslSocket(this);
+        m_ssl->setSslConfiguration(*m_sslConf);
 
-    QSslConfiguration sslConf;
-    sslConf.setProtocol(QSsl::TlsV1SslV3);
-    sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
-    sslConf.setLocalCertificate(loadCertificate());
-    sslConf.setPrivateKey(loadKey());
-
-    ssl->setSslConfiguration(sslConf);
-    m_socket = ssl;
-
+        m_socket = m_ssl;
+    } else {
+        m_socket = new QTcpSocket(this);
+    }
+    delete m_sslConf;
     connect(m_socket, SIGNAL(readyRead()), this, SLOT(read()));
     connect(m_socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
     connect(m_socket, SIGNAL(bytesWritten(qint64)), this, SLOT(updateWriteCount(qint64)));
 }
 
-QSslCertificate QHttpConnection::loadCertificate() {
-    QString certContent = getFileContent(":/server.crt");
-    return QSslCertificate(certContent.toUtf8(), QSsl::Pem);
+void QHttpConnection::setSslConf(const QSslConfiguration &sslConf){
+    m_sslConf = new QSslConfiguration(sslConf);
+
 }
-
-QSslKey QHttpConnection::loadKey() {
-    QString keyContent = getFileContent(":/server.key");
-    return QSslKey(keyContent.toUtf8(), QSsl::Rsa, QSsl::Pem);
-}
-
-QString QHttpConnection::getFileContent(QString path)
-{
-    QFile file(path);
-    if(!file.open(QFile::ReadOnly | QFile::Text)) {
-        qCritical() << "Can't load SSL file: " << path;
-    }
-
-    QTextStream in(&file);
-    QString text = in.readAll();
-    file.close();
-    return text;
-}
-
 
 void QHttpConnection::prepareConnection(qintptr descriptor) {
     if(m_socket->isOpen()) {
@@ -112,7 +96,9 @@ void QHttpConnection::prepareConnection(qintptr descriptor) {
         return;
     }
 
-    ((QSslSocket *) m_socket)->startServerEncryption();
+    if(m_sslConf) {
+        ((QSslSocket *) m_socket)->startServerEncryption();
+    }
 }
 
 QHttpConnection::~QHttpConnection()

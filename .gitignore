@@ -28,3 +28,4 @@ docs/html
 *.lib
 *.sln
 *.rc
+**/Makefile.*
