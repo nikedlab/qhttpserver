@@ -34,6 +34,7 @@
 #include <QObject>
 #include <QHostAddress>
 #include <QTcpServer>
+#include <QSslConfiguration>
 
 /// Maps status codes to string reason phrases
 extern QHash<int, QString> STATUS_CODES;
@@ -64,6 +65,16 @@ public:
     /** @param parent Parent QObject for the server. */
     explicit QHttpServer(QObject *parent = 0);
 
+    /**
+     * Construct a new HTTP Server.
+     * @brief QHttpServer
+     * @param sslConf Required for establishing SSL connection.
+     *        Minimal configuration should contain certificate and key.
+     *        Other params will be added authomatically
+     * @param parent Parent QObject for the server.
+     */
+    explicit QHttpServer(QSslConfiguration sslConf, QObject *parent = 0);
+
     virtual ~QHttpServer();
 
     /// Start the server by bounding to the given @c address and @c port.
@@ -91,8 +102,9 @@ Q_SIGNALS:
     void prepareConnection(qintptr descriptor);
 
 private:
-    QTcpServer *m_tcpServer;
+    QSslConfiguration *m_sslConf = 0;
     QHttpConnection *connection;
+    void init();
 
 protected:
     void incomingConnection(qintptr socketDescriptor) Q_DECL_OVERRIDE;
