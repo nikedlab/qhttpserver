@@ -29,3 +29,4 @@ docs/html
 *.sln
 *.rc
 **/Makefile.*
+examples
