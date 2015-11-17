@@ -14,7 +14,12 @@ CONFIG += dll debug_and_release
 
 CONFIG(debug, debug|release) {
     win32: TARGET = $$join(TARGET,,,d)
+    DESTDIR = $$QHTTPSERVER_BASE/lib/debug
+} else {
+
+    DESTDIR = $$QHTTPSERVER_BASE/lib/release
 }
+
 
 DEFINES += QHTTPSERVER_EXPORT
 
@@ -29,7 +34,7 @@ SOURCES = *.cpp $$QHTTPSERVER_BASE/http-parser/http_parser.c
 
 OBJECTS_DIR = $$QHTTPSERVER_BASE/build
 MOC_DIR = $$QHTTPSERVER_BASE/build
-DESTDIR = $$QHTTPSERVER_BASE/lib
+
 
 target.path = $$LIBDIR
 headers.path = $$INCLUDEDIR

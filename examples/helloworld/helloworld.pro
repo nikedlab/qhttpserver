@@ -6,14 +6,15 @@ QT -= gui
 CONFIG += debug
 
 INCLUDEPATH += ../../src
-LIBS += -L../../lib
-
-win32 {
-    debug: LIBS += -lqhttpserverd
-    else: LIBS += -lqhttpserver
-} else {
-    LIBS += -lqhttpserver
-}
 
 SOURCES = helloworld.cpp
 HEADERS = helloworld.h
+
+
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../lib/release/ -lqhttpserver
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../lib/debug/ -lqhttpserver
+else:unix: LIBS += -L$$PWD/../../lib/debug/ -lqhttpserver
+
+INCLUDEPATH += $$PWD/../../
+DEPENDPATH += $$PWD/../../

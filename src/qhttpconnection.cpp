@@ -98,8 +98,9 @@ QString QHttpConnection::getFileContent(QString path)
 
 
 void QHttpConnection::prepareConnection(qintptr descriptor) {
-    qDebug() << "New connection: " << descriptor;
-    //Q_ASSERT(m_socket->isOpen()==false); // if not, then the handler is already busy
+    if(m_socket->isOpen()) {
+        return;
+    }
 
     //UGLY workaround - we need to clear writebuffer before reusing this socket
     //https://bugreports.qt-project.org/browse/QTBUG-28914
@@ -116,7 +117,6 @@ void QHttpConnection::prepareConnection(qintptr descriptor) {
 
 QHttpConnection::~QHttpConnection()
 {
-    qDebug() << "~QHttpConnection";
     delete m_socket;
     m_socket = 0;
 
@@ -129,7 +129,6 @@ QHttpConnection::~QHttpConnection()
 
 void QHttpConnection::disconnected()
 {
-    qDebug() << "disconnected";
     deleteLater();
     m_socket->close();
 
@@ -144,7 +143,6 @@ void QHttpConnection::disconnected()
 
 void QHttpConnection::updateWriteCount(qint64 count)
 {
-    qDebug() << "updateWriteCount";
     Q_ASSERT(m_transmitPos + count <= m_transmitLen);
 
     m_transmitPos += count;
@@ -159,7 +157,6 @@ void QHttpConnection::updateWriteCount(qint64 count)
 
 void QHttpConnection::read()
 {
-    qDebug() << "read";
     Q_ASSERT(m_parser);
 
     while (m_socket->bytesAvailable()) {
@@ -170,26 +167,22 @@ void QHttpConnection::read()
 
 void QHttpConnection::write(const QByteArray &data)
 {
-    qDebug() << "write: " << data;
     m_socket->write(data);
     m_transmitLen += data.size();
 }
 
 void QHttpConnection::flush()
 {
-    qDebug() << "flush";
     m_socket->flush();
 }
 
 void QHttpConnection::waitForBytesWritten()
 {
-    qDebug() << "waitForBytesWritten";
     m_socket->waitForBytesWritten();
 }
 
 void QHttpConnection::responseDone()
 {
-    qDebug() << "responseDone";
     QHttpResponse *response = qobject_cast<QHttpResponse *>(QObject::sender());
     if (response->m_last)
         m_socket->disconnectFromHost();
@@ -238,7 +231,6 @@ QUrl createUrl(const char *urlData, const http_parser_url &urlInfo)
 
 int QHttpConnection::MessageBegin(http_parser *parser)
 {
-    qDebug() << "MessageBegin";
     QHttpConnection *theConnection = static_cast<QHttpConnection *>(parser->data);
     theConnection->m_currentHeaders.clear();
     theConnection->m_currentUrl.clear();
@@ -252,7 +244,6 @@ int QHttpConnection::MessageBegin(http_parser *parser)
 
 int QHttpConnection::HeadersComplete(http_parser *parser)
 {
-    qDebug() << "HeadersComplete";
     QHttpConnection *theConnection = static_cast<QHttpConnection *>(parser->data);
     Q_ASSERT(theConnection->m_request);
 
@@ -296,7 +287,6 @@ int QHttpConnection::HeadersComplete(http_parser *parser)
 
 int QHttpConnection::MessageComplete(http_parser *parser)
 {
-    qDebug() << "MessageComplete";
     // TODO: do cleanup and prepare for next request
     QHttpConnection *theConnection = static_cast<QHttpConnection *>(parser->data);
     Q_ASSERT(theConnection->m_request);
@@ -308,7 +298,6 @@ int QHttpConnection::MessageComplete(http_parser *parser)
 
 int QHttpConnection::Url(http_parser *parser, const char *at, size_t length)
 {
-    qDebug() << "Url";
     QHttpConnection *theConnection = static_cast<QHttpConnection *>(parser->data);
     Q_ASSERT(theConnection->m_request);
 
@@ -318,7 +307,6 @@ int QHttpConnection::Url(http_parser *parser, const char *at, size_t length)
 
 int QHttpConnection::HeaderField(http_parser *parser, const char *at, size_t length)
 {
-    qDebug() << "HeaderField";
     QHttpConnection *theConnection = static_cast<QHttpConnection *>(parser->data);
     Q_ASSERT(theConnection->m_request);
 
@@ -343,7 +331,6 @@ int QHttpConnection::HeaderField(http_parser *parser, const char *at, size_t len
 
 int QHttpConnection::HeaderValue(http_parser *parser, const char *at, size_t length)
 {
-    qDebug() << "HeaderValue";
     QHttpConnection *theConnection = static_cast<QHttpConnection *>(parser->data);
     Q_ASSERT(theConnection->m_request);
 
@@ -354,7 +341,6 @@ int QHttpConnection::HeaderValue(http_parser *parser, const char *at, size_t len
 
 int QHttpConnection::Body(http_parser *parser, const char *at, size_t length)
 {
-    qDebug() << "Body";
     QHttpConnection *theConnection = static_cast<QHttpConnection *>(parser->data);
     Q_ASSERT(theConnection->m_request);
 
